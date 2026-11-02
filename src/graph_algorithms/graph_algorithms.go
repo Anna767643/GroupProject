@@ -1,4 +1,4 @@
-package main
+package graph_algorithms
 
 import (
 	"s21_graph_algorithms/queue"
@@ -85,28 +85,3 @@ func BreadthFirstSearch(graph *Graph, start_vertex int) []int {
 }
 
 //func GetShortestPathBetweenVertices(graph *Graph, vertex1 int, vertex2 int){}
-
-//func main() {
-//
-//	graph := [][]int{
-//		{0, 5, 2, 0},
-//		{5, 0, 0, 1},
-//		{2, 0, 0, 7},
-//		{0, 1, 7, 0},
-//	}
-//	arr := make(map[int]int)
-//	//arr := make([]int, 0, len(graph))
-//	vertex1 := 1
-//	//vertex2 := 4
-//	arr[vertex1] = 0
-//	for i, _ := range graph {
-//		for j, _ := range graph {
-//			if _, ok := arr[i+1]; !ok {
-//				arr[i+1] += graph[i][j]
-//				//fmt.Println(graph[i][j])
-//			}
-//		}
-//	}
-//	fmt.Println(arr)
-//
-//}
