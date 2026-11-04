@@ -1,5 +1,5 @@
 PACKAGES := ./...
-BUILD := build
+BUILD := build ./test_data/files_dot/*
 
 s21_graph:
 	mkdir -p $(BUILD)
@@ -24,4 +24,4 @@ fmt:
 	go mod tidy -diff
 
 clean:
-	rm -rf $(BUILD) index.html coverage.txt
+	rm -rf $(BUILD) index.html coverage.txt 
