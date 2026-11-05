@@ -23,10 +23,7 @@ func DepthFirstSearch(graph *Graph, start_vertex int) []int {
 	row.Push(start_vertex)
 	arr := make(map[int]struct{})
 	arr[start_vertex] = struct{}{}
-	//тут изменим пока нет метода который возвращает количество вершин графа
-	//res := make([]int, 0, len(matrix))
-
-	res := make([]int, 0)
+	res := make([]int, 0, graph.Size())
 
 	for !row.IsEmpty() {
 		sl, flag := row.Pop()
@@ -37,7 +34,7 @@ func DepthFirstSearch(graph *Graph, start_vertex int) []int {
 			}
 			arr[sl] = struct{}{}
 			res = append(res, sl)
-			for _, neighbor := range graph.GetAdjacentVertices(sl) {
+			for _, neighbor := range graph.Neighbours(sl) {
 				if _, ok := arr[neighbor]; !ok {
 					row.Push(neighbor)
 				}
@@ -54,8 +51,7 @@ func BreadthFirstSearch(graph *Graph, start_vertex int) []int {
 	row.Push(start_vertex)
 
 	arr := make(map[int]struct{})
-	//res := make([]int, 0, len(matrix))
-	res := make([]int, 0)
+	res := make([]int, 0, graph.Size())
 	arr[start_vertex] = struct{}{}
 
 	for !row.IsEmpty() {
@@ -63,16 +59,8 @@ func BreadthFirstSearch(graph *Graph, start_vertex int) []int {
 
 		if flag {
 			res = append(res, sl)
-			//for j, _ := range matrix {
-			//	if _, ok := arr[j+1]; !ok {
-			//		if matrix[sl-1][j] == 1 {
-			//			row.Push(j + 1)
-			//			arr[j+1] = struct{}{}
-			//		}
-			//	}
-			//}
 
-			for _, neighbor := range graph.GetAdjacentVertices(sl) {
+			for _, neighbor := range graph.Neighbours(sl) {
 				if _, ok := arr[neighbor]; !ok {
 					row.Push(neighbor)
 					arr[neighbor] = struct{}{}
@@ -83,5 +71,3 @@ func BreadthFirstSearch(graph *Graph, start_vertex int) []int {
 
 	return res
 }
-
-//func GetShortestPathBetweenVertices(graph *Graph, vertex1 int, vertex2 int){}
