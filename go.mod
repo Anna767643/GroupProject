@@ -1,3 +1,3 @@
-module graph
+module simplenavigator
 
 go 1.23.2
