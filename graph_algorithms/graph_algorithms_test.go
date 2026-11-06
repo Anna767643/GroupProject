@@ -1,4 +1,4 @@
-package graphalgorithms
+package s21_graph_algorithms
 
 import (
 	graph "simplenavigator/graph"

@@ -1,9 +1,78 @@
-package graphalgorithms
+package s21_graph_algorithms
 
 import (
 	"fmt"
 	graph "simplenavigator/graph"
+	queue "simplenavigator/queue"
+	stack "simplenavigator/stack"
 )
+
+//          1
+//         / \
+//        2   3
+//         \ /
+//          4
+//graph := [][]int{
+//{0, 1, 1, 0},
+//{1, 0, 0, 1},
+//{1, 0, 0, 1},
+//{0, 1, 1, 0},
+//}
+
+func DepthFirstSearch(graph *graph.Graph, start_vertex int) []int {
+
+	row := stack.New()
+	row.Push(start_vertex)
+	arr := make(map[int]struct{})
+	arr[start_vertex] = struct{}{}
+	res := make([]int, 0, graph.Size())
+
+	for !row.IsEmpty() {
+		sl, flag := row.Pop()
+
+		if flag {
+			if _, ok := arr[sl]; ok {
+				continue
+			}
+			arr[sl] = struct{}{}
+			res = append(res, sl)
+			for _, neighbor := range graph.Neighbors(sl) {
+				if _, ok := arr[neighbor]; !ok {
+					row.Push(neighbor)
+				}
+			}
+		}
+	}
+
+	return res
+}
+
+func BreadthFirstSearch(graph *graph.Graph, start_vertex int) []int {
+
+	row := queue.New()
+	row.Push(start_vertex)
+
+	arr := make(map[int]struct{})
+	res := make([]int, 0, graph.Size())
+	arr[start_vertex] = struct{}{}
+
+	for !row.IsEmpty() {
+		sl, flag := row.Pop()
+
+		if flag {
+			res = append(res, sl)
+
+			for _, neighbor := range graph.Neighbors(sl) {
+				if _, ok := arr[neighbor]; !ok {
+					row.Push(neighbor)
+					arr[neighbor] = struct{}{}
+				}
+			}
+		}
+	}
+
+	return res
+}
 
 // Очень большое число 1*10 в 9ой степени (1 000 000 000)
 var inf int = 1e9
