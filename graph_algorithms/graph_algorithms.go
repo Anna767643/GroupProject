@@ -3,9 +3,13 @@ package s21_graph_algorithms
 import (
 	"fmt"
 	graph "simplenavigator/graph"
+	"simplenavigator/minHeap"
 	queue "simplenavigator/queue"
 	stack "simplenavigator/stack"
 )
+
+// Очень большое число 1*10 в 9ой степени (1 000 000 000)
+var inf int = 1e9
 
 //          1
 //         / \
@@ -36,7 +40,13 @@ func DepthFirstSearch(graph *graph.Graph, start_vertex int) []int {
 			}
 			arr[sl] = struct{}{}
 			res = append(res, sl)
-			for _, neighbor := range graph.Neighbors(sl) {
+
+			neighbors, err := graph.Neighbors(sl)
+			if err != nil {
+				return nil
+			}
+
+			for _, neighbor := range neighbors {
 				if _, ok := arr[neighbor]; !ok {
 					row.Push(neighbor)
 				}
@@ -61,8 +71,12 @@ func BreadthFirstSearch(graph *graph.Graph, start_vertex int) []int {
 
 		if flag {
 			res = append(res, sl)
+			neighbors, err := graph.Neighbors(sl)
+			if err != nil {
+				return nil
+			}
 
-			for _, neighbor := range graph.Neighbors(sl) {
+			for _, neighbor := range neighbors {
 				if _, ok := arr[neighbor]; !ok {
 					row.Push(neighbor)
 					arr[neighbor] = struct{}{}
@@ -74,8 +88,58 @@ func BreadthFirstSearch(graph *graph.Graph, start_vertex int) []int {
 	return res
 }
 
-// Очень большое число 1*10 в 9ой степени (1 000 000 000)
-var inf int = 1e9
+func GetShortestPathBetweenVertices(graph *graph.Graph, vertex1 int, vertex2 int) (int, bool) {
+
+	if vertex1 < 1 || vertex1 > graph.Size() ||
+		vertex2 < 1 || vertex2 > graph.Size() {
+		return 0, false
+	}
+	distances := make([]int, graph.Size())
+
+	for i, _ := range distances {
+		distances[i] = inf
+	}
+
+	distances[vertex1-1] = 0
+
+	heap := minHeap.New()
+
+	heap.Push(minHeap.Item{
+		Vertex:   vertex1,
+		Distance: 0,
+	})
+
+	for !heap.IsEmpty() {
+		el, _ := heap.Pop()
+
+		if el.Distance > distances[el.Vertex-1] {
+			continue
+		}
+		neighbors, err := graph.Neighbors(el.Vertex)
+		if err != nil {
+			return 0, false
+		}
+		for _, neighbor := range neighbors {
+			weight := graph.Weight(el.Vertex, neighbor)
+			newDistance := el.Distance + weight
+
+			if newDistance < distances[neighbor-1] {
+				distances[neighbor-1] = newDistance
+
+				heap.Push(minHeap.Item{
+					Vertex:   neighbor,
+					Distance: newDistance,
+				})
+			}
+		}
+	}
+
+	if distances[vertex2-1] == inf {
+		return 0, false
+	}
+
+	return distances[vertex2-1], true
+}
 
 /*
 Остовное дерево в связном неориентированном графе — это такой подграф,
