@@ -11,12 +11,7 @@ import (
 //        2   3
 //         \ /
 //          4
-//graph := [][]int{
-//{0, 1, 1, 0},
-//{1, 0, 0, 1},
-//{1, 0, 0, 1},
-//{0, 1, 1, 0},
-//}
+//graph := [][]int{ {0, 1, 1, 0}, {1, 0, 0, 1}, {1, 0, 0, 1}, {0, 1, 1, 0}, }
 
 func DepthFirstSearch(graph *Graph, start_vertex int) []int {
 
@@ -110,7 +105,11 @@ func GetShortestPathBetweenVertices(graph *Graph, vertex1 int, vertex2 int) (int
 		if el.Distance > distances[el.Vertex-1] {
 			continue
 		}
-		for _, neighbor := range graph.Neighbors(el.Vertex) {
+		neighbors, err := graph.Neighbors(el.Vertex)
+		if err != nil {
+			return 0, false
+		}
+		for _, neighbor := range neighbors {
 			weight := graph.Weight(el.Vertex, neighbor)
 			newDistance := el.Distance + weight
 
