@@ -417,6 +417,187 @@ func TestGetShortestPathBetweenVerticesInvalidVertex(t *testing.T) {
 	}
 }
 
+// Нет пути — ячейка равна inf. Диагональ равна 0: петля не заменяет расстояние до самой себя.
+func TestGetShortestPathsBetweenAllVertices(t *testing.T) {
+	tests := []struct {
+		name  string
+		graph [][]int
+		want  [][]int
+	}{
+		{
+			name:  "ромб",
+			graph: diamond,
+			want: [][]int{
+				{0, 1, 1, 2},
+				{1, 0, 2, 1},
+				{1, 2, 0, 1},
+				{2, 1, 1, 0},
+			},
+		},
+		{
+			name:  "цепь",
+			graph: chain,
+			want: [][]int{
+				{0, 1, 2, 3},
+				{1, 0, 1, 2},
+				{2, 1, 0, 1},
+				{3, 2, 1, 0},
+			},
+		},
+		{
+			name:  "звезда",
+			graph: star,
+			want: [][]int{
+				{0, 1, 1, 1},
+				{1, 0, 2, 2},
+				{1, 2, 0, 2},
+				{1, 2, 2, 0},
+			},
+		},
+		{
+			name:  "дерево",
+			graph: tree,
+			want: [][]int{
+				{0, 1, 2, 2, 1},
+				{1, 0, 1, 1, 2},
+				{2, 1, 0, 2, 3},
+				{2, 1, 2, 0, 3},
+				{1, 2, 3, 3, 0},
+			},
+		},
+		{
+			name:  "две компоненты",
+			graph: disconnected,
+			want: [][]int{
+				{0, 1, inf, inf},
+				{1, 0, inf, inf},
+				{inf, inf, 0, 1},
+				{inf, inf, 1, 0},
+			},
+		},
+		{
+			name:  "ориентированный",
+			graph: directed,
+			want: [][]int{
+				{0, 1, 1, 2},
+				{inf, 0, inf, 1},
+				{inf, inf, 0, 1},
+				{inf, inf, inf, 0},
+			},
+		},
+		{
+			name:  "одна вершина",
+			graph: single,
+			want:  [][]int{{0}},
+		},
+		{
+			name:  "нет рёбер",
+			graph: noEdge,
+			want: [][]int{
+				{0, inf},
+				{inf, 0},
+			},
+		},
+		{
+			name:  "петля не меняет диагональ",
+			graph: selfLoop,
+			want: [][]int{
+				{0, 1},
+				{1, 0},
+			},
+		},
+		{
+			name:  "обход дешевле прямого ребра",
+			graph: cheapLongPath,
+			want: [][]int{
+				{0, 1, 2, 3},
+				{inf, 0, 1, 2},
+				{inf, inf, 0, 1},
+				{inf, inf, inf, 0},
+			},
+		},
+		{
+			name:  "прямой путь дороже",
+			graph: directIsWorse,
+			want: [][]int{
+				{0, 2, 3},
+				{2, 0, 1},
+				{3, 1, 0},
+			},
+		},
+		{
+			name:  "ориентированный взвешенный",
+			graph: weightedDirected,
+			want: [][]int{
+				{0, 1, 3, 6},
+				{inf, 0, 2, 5},
+				{inf, inf, 0, 3},
+				{inf, inf, inf, 0},
+			},
+		},
+		{
+			name:  "два равных пути",
+			graph: equalPaths,
+			want: [][]int{
+				{0, 2, 2, 4},
+				{2, 0, 4, 2},
+				{2, 4, 0, 2},
+				{4, 2, 2, 0},
+			},
+		},
+		{
+			name:  "промежуточная вершина короче жадного выбора",
+			graph: weightedUndirected,
+			want: [][]int{
+				{0, 3, 2, 8},
+				{3, 0, 1, 5},
+				{2, 1, 0, 6},
+				{8, 5, 6, 0},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetShortestPathsBetweenAllVertices(newTestGraph(t, tt.graph))
+			if !equalMatrix(got, tt.want) {
+				t.Errorf("GetShortestPathsBetweenAllVertices() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetShortestPathsBetweenAllVerticesMatchesPairwise(t *testing.T) {
+	graphs := [][][]int{
+		diamond, chain, star, tree, disconnected, directed,
+		single, noEdge, selfLoop, cheapLongPath, directIsWorse,
+		weightedDirected, equalPaths, weightedUndirected,
+	}
+
+	for _, matrix := range graphs {
+		g := newTestGraph(t, matrix)
+		got := GetShortestPathsBetweenAllVertices(g)
+		if len(got) != len(matrix) {
+			t.Fatalf("rows = %d, want %d", len(got), len(matrix))
+		}
+		for from := 1; from <= len(matrix); from++ {
+			if len(got[from-1]) != len(matrix) {
+				t.Fatalf("row %d has %d columns, want %d", from, len(got[from-1]), len(matrix))
+			}
+			for to := 1; to <= len(matrix); to++ {
+				dist, ok := GetShortestPathBetweenVertices(g, from, to)
+				want := inf
+				if ok {
+					want = dist
+				}
+				if got[from-1][to-1] != want {
+					t.Errorf("path %d → %d = %d, want %d", from, to, got[from-1][to-1], want)
+				}
+			}
+		}
+	}
+}
+
 // diamond: 1—2, 1—3, 2—4, 3—4.
 var diamond = [][]int{
 	{0, 1, 1, 0},
@@ -560,4 +741,16 @@ func newTestGraph(t *testing.T, matrix [][]int) *graph.Graph {
 		t.Fatalf("LoadGraphFromFile: %v", err)
 	}
 	return &g
+}
+
+func equalMatrix(got, want [][]int) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range want {
+		if !slices.Equal(got[i], want[i]) {
+			return false
+		}
+	}
+	return true
 }

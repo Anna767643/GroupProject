@@ -2,26 +2,14 @@ package s21_graph_algorithms
 
 import (
 	"fmt"
+	"math"
 	graph "simplenavigator/graph"
 	"simplenavigator/minHeap"
 	queue "simplenavigator/queue"
 	stack "simplenavigator/stack"
 )
 
-// Очень большое число 1*10 в 9ой степени (1 000 000 000)
-var inf int = 1e9
-
-//          1
-//         / \
-//        2   3
-//         \ /
-//          4
-//graph := [][]int{
-//{0, 1, 1, 0},
-//{1, 0, 0, 1},
-//{1, 0, 0, 1},
-//{0, 1, 1, 0},
-//}
+const inf = math.MaxInt / 2
 
 func DepthFirstSearch(graph *graph.Graph, start_vertex int) []int {
 
@@ -138,6 +126,43 @@ func GetShortestPathBetweenVertices(graph *graph.Graph, vertex1 int, vertex2 int
 	}
 
 	return distances[vertex2-1], true
+}
+
+func GetShortestPathsBetweenAllVertices(graph *graph.Graph) [][]int {
+	n := graph.Size()
+	dist := make([][]int, n)
+	for i := range dist {
+		dist[i] = make([]int, n)
+	}
+
+	for i := range dist {
+		for j := range dist {
+			w := graph.Weight(i+1, j+1)
+			if w == 0 {
+				w = inf
+			}
+			if i == j {
+				w = 0
+			}
+			dist[i][j] = w
+		}
+	}
+
+	for k := range dist {
+		for i := range dist {
+			for j := range dist {
+				if dist[i][k] == inf || dist[k][j] == inf {
+					continue
+				}
+				sum := dist[i][k] + dist[k][j]
+				if dist[i][j] > sum {
+					dist[i][j] = sum
+				}
+			}
+		}
+	}
+
+	return dist
 }
 
 /*
