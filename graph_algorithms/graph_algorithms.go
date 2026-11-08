@@ -28,7 +28,6 @@ func DepthFirstSearch(graph *graph.Graph, start_vertex int) []int {
 	row := stack.New()
 	row.Push(start_vertex)
 	arr := make(map[int]struct{})
-	arr[start_vertex] = struct{}{}
 	res := make([]int, 0, graph.Size())
 
 	for !row.IsEmpty() {
