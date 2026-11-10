@@ -42,7 +42,3 @@ func (s *Stack) size() int {
 func (s *Stack) IsEmpty() bool {
 	return s.size() == 0
 }
-
-func (s *Stack) toSlice() []int {
-	return s.data
-}

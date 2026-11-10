@@ -127,11 +127,15 @@ func (g *Graph) LoadGraphFromFile(filename string) error {
 	text := string(bytes)
 
 	lines := strings.Split(text, "\n")
-	lines[0] = strings.Trim(lines[0], " ")
+	lines[0] = strings.TrimSpace(lines[0])
 	size, err := strconv.Atoi(lines[0])
 
 	if err != nil || size <= 0 {
 		return ErrBadSize
+	}
+
+	if len(lines) < size+1 {
+		return ErrBadRow
 	}
 
 	matrix := make([][]int, size)

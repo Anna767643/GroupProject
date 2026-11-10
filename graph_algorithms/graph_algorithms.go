@@ -84,7 +84,7 @@ func GetShortestPathBetweenVertices(graph *graph.Graph, vertex1 int, vertex2 int
 	}
 	distances := make([]int, graph.Size())
 
-	for i, _ := range distances {
+	for i := range distances {
 		distances[i] = inf
 	}
 
