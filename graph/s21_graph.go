@@ -35,6 +35,33 @@ var (
 	ErrVertice      = errors.New("graph: vertice must be less graph size or more zero")
 )
 
+func NewGraph(size int, matrix [][]int) (*Graph, error) {
+	if matrix == nil {
+		return nil, fmt.Errorf("matrix cannot be nil")
+	}
+
+	if len(matrix) != size {
+		return nil, fmt.Errorf("matrix rows count mismatch: expected %d, got %d", size, len(matrix))
+	}
+
+	for i, row := range matrix {
+		if len(row) != size {
+			return nil, fmt.Errorf("invalid row length at index %d: expected %d, got %d", i, size, len(row))
+		}
+	}
+
+	matrixCopy := make([][]int, size)
+	for i := 0; i < size; i++ {
+		matrixCopy[i] = make([]int, size)
+		copy(matrixCopy[i], matrix[i])
+	}
+
+	return &Graph{
+		size:   size,
+		matrix: matrixCopy,
+	}, nil
+}
+
 // Size - возвращает количество вершин
 func (g *Graph) Size() int { return g.size }
 

@@ -3,6 +3,7 @@ package s21_graph_algorithms
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	graph "simplenavigator/graph"
 	"simplenavigator/minHeap"
 	queue "simplenavigator/queue"
@@ -241,4 +242,197 @@ func GetLeastSpanningTree(graph *graph.Graph) ([][]int, error) {
 	}
 
 	return resultMatrix, nil
+}
+
+// TsmResult - описывает найденный маршрут коммивояжера
+type TsmResult struct {
+	Vertices []int // порядок вершин с 1, первая вершина повторяется в конце
+	Distance int   // длина маршрута
+}
+
+// candidate - вершина и феромон
+type candidate struct {
+	node int     // индекс вершины
+	prob float64 // вычисленная привлекательность
+}
+
+// SolveTravelingSalesmanProblem - решение задачи коммивояжера с помощью муравьиного алгоритма
+func SolveTravelingSalesmanProblem(graph *graph.Graph) (*TsmResult, error) {
+	size := graph.Size()
+	if size == 0 {
+		return nil, fmt.Errorf("size is zero")
+	}
+
+	if size == 1 {
+		return &TsmResult{
+			Vertices: []int{1, 1},
+			Distance: 0,
+		}, nil
+	}
+
+	// Инициализация матрицы феромонов
+	tau := make([][]float64, size)
+	for i := 0; i < size; i++ {
+		tau[i] = make([]float64, size)
+		for j := 0; j < size; j++ {
+			if i != j {
+				tau[i][j] = 1.0
+			}
+		}
+	}
+
+	bestResult := &TsmResult{
+		Vertices: nil,
+		Distance: math.MaxInt,
+	}
+	found := false
+	antsCount := size
+
+	localPheromone := make([][]float64, size)
+	for i := 0; i < size; i++ {
+		localPheromone[i] = make([]float64, size)
+	}
+
+	iterations := 300
+
+	for iter := 0; iter < iterations; iter++ {
+		// Очистка локального обновления феромона для новой итерации
+		for i := 0; i < size; i++ {
+			for j := 0; j < size; j++ {
+				localPheromone[i][j] = 0
+			}
+		}
+
+		// Поиск решения муравьями
+		for ant := 0; ant < antsCount; ant++ {
+			// 1. Получаем результат конкретного муравья
+			foundPath, antResult := createPathWithOneAnt(graph, tau, ant, localPheromone)
+
+			// 2. Обновляем глобальный лучший результат ТОЛЬКО если он действительно лучше
+			if foundPath && antResult.Distance < bestResult.Distance {
+				bestResult = antResult
+				found = true
+			}
+		}
+
+		updateTau(tau, localPheromone, size)
+	}
+
+	if !found {
+		return nil, fmt.Errorf("the route does not exist")
+	}
+
+	return bestResult, nil
+}
+
+func createPathWithOneAnt(g *graph.Graph, tau [][]float64, ant int, localPheromone [][]float64) (bool, *TsmResult) {
+	size := g.Size()
+	start := ant % size
+	path := []int{start}
+	current := start
+	distance := 0
+	valid := true
+
+	visited := make([]bool, size)
+	visited[start] = true
+
+	for len(path) < size {
+		cands, sumProb := findNeighbors(g, current, tau, visited)
+
+		if len(cands) == 0 {
+			valid = false
+			break
+		}
+
+		var nextNode int
+		if len(cands) == 1 {
+			nextNode = cands[0].node
+		} else {
+			r := rand.Float64() * sumProb
+			nextNode = cands[len(cands)-1].node // fallback
+			for _, c := range cands {
+				r -= c.prob
+				if r <= 0 {
+					nextNode = c.node
+					break
+				}
+			}
+		}
+
+		path = append(path, nextNode)
+		visited[nextNode] = true // Отмечаем как посещенную для следующих шагов
+
+		// +1, так как graph.Weight ожидает 1-индексацию
+		distance += g.Weight(current+1, nextNode+1)
+		current = nextNode
+	}
+
+	if valid && len(path) == size {
+		wBack := g.Weight(current+1, start+1)
+		if wBack > 0 {
+			distance += wBack
+			path = append(path, start) // замыкаем цикл
+
+			resVertices := make([]int, len(path))
+			for i, v := range path {
+				resVertices[i] = v + 1 // переводим в 1-индексацию для ответа
+			}
+
+			// Локальное обновление феромона
+			Q := 100.0
+			delta := Q / float64(distance)
+			for i := 0; i < len(path)-1; i++ {
+				u := path[i]
+				v := path[i+1]
+				localPheromone[u][v] += delta
+			}
+
+			return true, &TsmResult{
+				Vertices: resVertices,
+				Distance: distance,
+			}
+		}
+	}
+
+	return false, &TsmResult{}
+}
+
+func findNeighbors(g *graph.Graph, current int, tau [][]float64, visited []bool) ([]candidate, float64) {
+	alpha := 1.0
+	beta := 2.0
+
+	size := g.Size()
+	var cands []candidate
+	sumProb := 0.0
+
+	for nextNode := 0; nextNode < size; nextNode++ {
+		if !visited[nextNode] {
+			weight := g.Weight(current+1, nextNode+1)
+			if weight > 0 {
+				heuristic := 1.0 / float64(weight)
+				prob := math.Pow(tau[current][nextNode], alpha) * math.Pow(heuristic, beta)
+
+				cands = append(cands, candidate{node: nextNode, prob: prob})
+				sumProb += prob
+			}
+		}
+	}
+
+	return cands, sumProb
+}
+
+// updateTau - глобальное обновление феромона (испарение + локальное обновление)
+func updateTau(tau [][]float64, localPheromone [][]float64, size int) {
+	rho := 0.5 // коэффициент испарения феромона
+
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			if i != j {
+				tau[i][j] = tau[i][j]*(1-rho) + localPheromone[i][j]
+				if tau[i][j] < 0.01 {
+					tau[i][j] = 0.01
+				}
+			}
+		}
+	}
 }

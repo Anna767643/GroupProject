@@ -754,3 +754,141 @@ func equalMatrix(got, want [][]int) bool {
 	}
 	return true
 }
+
+func TestSolveTravelingSalesmanProblem(t *testing.T) {
+	testCases := []struct {
+		testName         string
+		size             int
+		matrix           [][]int
+		expectedError    string
+		expectedDistance int
+	}{
+		{
+			testName:      "graph size is zero",
+			size:          0,
+			matrix:        [][]int{}, // Пустой срез, чтобы пройти валидацию NewGraph
+			expectedError: "size is zero",
+		},
+		{
+			testName:         "graph size is one",
+			size:             1,
+			matrix:           [][]int{{0}},
+			expectedError:    "",
+			expectedDistance: 0,
+		},
+		{
+			testName: "simple triangle graph (complete)",
+			size:     3,
+			matrix: [][]int{
+				{0, 10, 15},
+				{10, 0, 20},
+				{15, 20, 0},
+			},
+			expectedError:    "",
+			expectedDistance: 45, // 10 + 20 + 15 (единственный возможный цикл)
+		},
+		{
+			testName: "disconnected graph (no valid route)",
+			size:     3,
+			matrix: [][]int{
+				{0, 10, 0},
+				{10, 0, 0},
+				{0, 0, 0}, // Вершина 3 изолирована
+			},
+			expectedError: "the route does not exist",
+		},
+		{
+			testName: "square graph with one expensive edge",
+			size:     4,
+			matrix: [][]int{
+				{0, 1, 5, 5},
+				{1, 0, 1, 5},
+				{5, 1, 0, 1},
+				{5, 5, 1, 0},
+			},
+			expectedError:    "",
+			expectedDistance: 8, // Оптимальный путь: 1->2->3->4->1 (1 + 1 + 1 + 5)
+		},
+		{
+			testName: "graph with missing edges but valid route exists",
+			size:     4,
+			matrix: [][]int{
+				{0, 5, 0, 5}, // ИСПРАВЛЕНО: добавлено ребро 1-4 (вес 5)
+				{5, 0, 5, 0},
+				{0, 5, 0, 5},
+				{5, 0, 5, 0}, // ИСПРАВЛЕНО: добавлено ребро 4-1 (вес 5)
+			},
+			expectedError:    "",
+			expectedDistance: 20, // 5 + 5 + 5 + 5
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.testName, func(t *testing.T) {
+			g, err := graph.NewGraph(tc.size, tc.matrix)
+
+			if tc.size > 0 && err != nil {
+				t.Fatalf("Failed to create graph: %v", err)
+			}
+
+			result, err := SolveTravelingSalesmanProblem(g)
+
+			if tc.expectedError != "" {
+				if err == nil {
+					t.Errorf("Expected error containing %q, but got nil", tc.expectedError)
+					return
+				}
+				if !strings.Contains(strings.ToLower(err.Error()), tc.expectedError) {
+					t.Errorf("Expected error containing %q, but got: %v", tc.expectedError, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Expected no error, but got: %v", err)
+				return
+			}
+
+			if result == nil {
+				t.Errorf("Expected result, but got nil")
+				return
+			}
+
+			if result.Distance != tc.expectedDistance {
+				t.Errorf("Expected distance %d, but got: %d", tc.expectedDistance, result.Distance)
+			}
+
+			if !isValidTSPRoute(result, tc.size) {
+				t.Errorf("Invalid route structure returned: %v", result.Vertices)
+			}
+		})
+	}
+}
+
+func isValidTSPRoute(result *TsmResult, size int) bool {
+	if size == 1 {
+		return len(result.Vertices) == 2 && result.Vertices[0] == 1 && result.Vertices[1] == 1
+	}
+
+	if len(result.Vertices) != size+1 {
+		return false
+	}
+
+	if result.Vertices[0] != result.Vertices[size] {
+		return false
+	}
+
+	visited := make(map[int]bool)
+	for i := 0; i < size; i++ {
+		v := result.Vertices[i]
+		if v < 1 || v > size {
+			return false
+		}
+		if visited[v] {
+			return false
+		}
+		visited[v] = true
+	} // Вершина посещена дважды до замыкания цикла
+
+	return len(visited) == size
+}
