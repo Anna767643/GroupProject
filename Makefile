@@ -40,5 +40,6 @@ fmt:
 
 clean:
 	rm -rf $(BUILD) index.html coverage.txt 
+	rm -rf ./test_data/files_dot
 
 .PHONY: all s21_graph s21_graph_algorithms app run test gcov_report fmt clean
