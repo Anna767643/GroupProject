@@ -42,7 +42,7 @@ func readInt(r *bufio.Reader, prompt string) (int, error) {
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	var g *graph.Graph
+	g := &graph.Graph{}
 	loaded := false
 
 	for {
@@ -84,10 +84,6 @@ func main() {
 				continue
 			}
 			res := graph_algorithms.BreadthFirstSearch(g, start) // ПРОВЕРЬТЕ: возвращает ли error
-			//if err != nil {
-			//	fmt.Println("Ошибка:", err)
-			//	continue
-			//}
 			fmt.Println(res)
 
 		case 3: // DFS
@@ -108,17 +104,13 @@ func main() {
 			}
 			dist, flag := graph_algorithms.GetShortestPathBetweenVertices(g, v1, v2)
 			if !flag {
-				fmt.Println("Ошибка:", err)
+				fmt.Println("Ошибка: путь не найден или некорректные вершины")
 				continue
 			}
 			fmt.Println("Длина кратчайшего пути:", dist)
 
 		case 5: // все пары
 			matrix := graph_algorithms.GetShortestPathsBetweenAllVertices(g)
-			//if err != nil {
-			//	fmt.Println("Ошибка:", err)
-			//	continue
-			//}
 			for _, row := range matrix {
 				fmt.Println(row)
 			}
