@@ -585,3 +585,109 @@ func TestExportGraphToDot(t *testing.T) {
 		})
 	}
 }
+
+func TestNewGraph(t *testing.T) {
+	testCases := []struct {
+		testName       string
+		size           int
+		matrix         [][]int
+		expectedError  string
+		expectedSize   int
+		expectedMatrix [][]int
+	}{
+		{
+			testName:       "OK, valid weighted graph",
+			size:           3,
+			matrix:         [][]int{{0, 5, 10}, {5, 0, 3}, {10, 3, 0}},
+			expectedError:  "",
+			expectedSize:   3,
+			expectedMatrix: [][]int{{0, 5, 10}, {5, 0, 3}, {10, 3, 0}},
+		},
+		{
+			testName:       "OK, empty graph (size 0)",
+			size:           0,
+			matrix:         [][]int{},
+			expectedError:  "",
+			expectedSize:   0,
+			expectedMatrix: [][]int{},
+		},
+		{
+			testName:      "Error, matrix is nil",
+			size:          3,
+			matrix:        nil,
+			expectedError: "matrix cannot be nil",
+		},
+		{
+			testName:      "Error, row count mismatch",
+			size:          3,
+			matrix:        [][]int{{0, 1, 2}, {1, 0, 3}}, // всего 2 строки вместо 3
+			expectedError: "matrix rows count mismatch: expected 3, got 2",
+		},
+		{
+			testName:      "Error, invalid row length",
+			size:          3,
+			matrix:        [][]int{{0, 1, 2}, {1, 0}, {2, 3, 0}}, // вторая строка имеет длину 2
+			expectedError: "invalid row length at index 1: expected 3, got 2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.testName, func(t *testing.T) {
+			g, err := NewGraph(tc.size, tc.matrix)
+
+			if tc.expectedError != "" {
+				if err == nil {
+					t.Errorf("Expected error containing %q, but got nil", tc.expectedError)
+					return
+				}
+				if !strings.Contains(err.Error(), tc.expectedError) {
+					t.Errorf("Expected error to contain %q, but got: %v", tc.expectedError, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Expected no error, but got: %v", err)
+				return
+			}
+
+			if g.size != tc.expectedSize {
+				t.Errorf("Expected size %d, but got: %d", tc.expectedSize, g.size)
+			}
+
+			if tc.expectedSize > 0 {
+				for i := 0; i < tc.expectedSize; i++ {
+					for j := 0; j < tc.expectedSize; j++ {
+						if g.matrix[i][j] != tc.expectedMatrix[i][j] {
+							t.Errorf("Expected matrix[%d][%d] to be %d, but got: %d", i, j, tc.expectedMatrix[i][j], g.matrix[i][j])
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestNewGraphDeepCopy(t *testing.T) {
+	originalMatrix := [][]int{
+		{0, 5, 10},
+		{5, 0, 3},
+		{10, 3, 0},
+	}
+
+	g, err := NewGraph(3, originalMatrix)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	originalMatrix[0][1] = 999
+	originalMatrix[1][0] = 999
+
+	if g.matrix[0][1] == 999 {
+		t.Errorf("Graph matrix was not deeply copied! It was affected by original matrix modification.")
+	}
+
+	if g.matrix[0][1] != 5 {
+		t.Errorf("Expected graph.matrix[0][1] to remain 5, but got: %d", g.matrix[0][1])
+	}
+}

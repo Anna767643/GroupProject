@@ -24,7 +24,7 @@ test:
 
 gcov_report:
 	mkdir -p test_data/files_dot
-	go test $(PACKAGES) -coverprofile=coverage.txt
+	go test ./graph/... ./graph_algorithms/... -coverprofile=coverage.txt
 	go tool cover -html coverage.txt -o index.html
 	open index.html
 
